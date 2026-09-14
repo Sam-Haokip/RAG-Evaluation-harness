@@ -4,22 +4,24 @@ Answers natural-language questions about a Python codebase (`psf/requests`) by r
 
 **If the retrieved code doesn't contain the answer, the system says so.** Measured hallucination rate on adversarial unanswerable questions: 0%.
 
+**None of the comparative claims below are statistically significant at the current sample size.** Every retrieval configuration was checked with McNemar's exact test against the strategy it was meant to beat. Chunking strategy (fixed-line vs. function-aware) and hybrid weighting (α=0.8 vs. pure semantic) both came back p=1.0: the entire "improvement" in each case is a single question out of thirty. Query decomposition came closer (p=0.25, 3 wins to 0 losses in its favor) but still falls short of the conventional 0.05 threshold. This is the real headline of the project as it currently stands: retrieval accuracy across every tested configuration clusters in the 83–100% range, and distinguishing between them properly requires more than 36 questions. See [What I got wrong](#what-i-got-wrong) for how this was found.
+
 ## Results
 
-Eight retrieval configurations, benchmarked against the same hand-verified 36-question set (factual, multi-hop, and deliberately unanswerable questions).
+Eight retrieval configurations, benchmarked against the same hand-verified 36-question set (factual, multi-hop, and deliberately unanswerable questions). Statistical status is noted per row where a test has been run.
 
-| Configuration | Retrieval Accuracy | Notes |
+| Configuration | Retrieval Accuracy | Statistical status |
 |---|---|---|
-| Fixed-line chunking (baseline) | 75.00% | Original 30-question set |
+| Fixed-line chunking (baseline) | 93.33% | Not significant vs. function-aware (p=1.0, McNemar exact) |
 | AST-based chunking, first attempt | 66.67% | Regression, see [What I got wrong](#what-i-got-wrong) |
-| AST-based chunking, fixed | 83.33% | |
-| + top-k raised 3 → 6 | 90.00% | |
+| AST-based chunking, fixed | 83.33% | 30-question set at the time |
+| Function-aware chunking + top-k raised 3 → 6 | 90.00% | Not significant vs. fixed-line baseline (p=1.0) |
 | Hybrid (BM25 + semantic), α=0.5 | 83.33% | Worse than semantic alone |
 | Hybrid, α=0.7 | 90.00% | Believed to be the ceiling at the time |
-| **Hybrid, α=0.8 (full sweep)** | **93.33%** | Actual peak, earlier conclusion was wrong |
-| Query decomposition | 83.33–95.83% (varies by run) | Non-deterministic, LLM-generated sub-queries |
+| Hybrid, α=0.8 (full sweep) | 93.33% | Not significant vs. α=1.0 pure semantic (p=1.0) |
+| Query decomposition | 83.33–100% (varies by run) | Closest to significant of the three tested (p=0.25, this run); directionally favors decomposition (3-0) but not confirmed |
 
-**Cost per question:** baseline retrieval costs roughly ₹0.00002. Query decomposition costs more than 100× that, sometimes considerably more depending on how many sub-queries a given question triggers, for comparable or sometimes zero accuracy gain. Hybrid search adds a full second retrieval signal (BM25) at **zero marginal cost**, since it's computed locally against the already-loaded corpus.
+**Cost per question:** baseline retrieval costs roughly ₹0.00002. Query decomposition costs more than 100× that, sometimes considerably more depending on how many sub-queries a given question triggers, for an accuracy advantage that is directionally promising but not yet statistically confirmed. Hybrid search adds a full second retrieval signal (BM25) at **zero marginal cost**, though its accuracy advantage over semantic-only search is also not yet confirmed at this sample size.
 
 **Answer quality is not one number.** Grading the same generated answers with three independently-designed judges (lenient reference-matching, strict reference-matching, source-grounded factual checking) gave accuracies of 78%, 60%, and 83% respectively, a stable 18–24 point gap, confirmed across three repeated runs, that doesn't close with more sampling. See [below](#how-correct-is-correct) for why.
 
@@ -31,9 +33,13 @@ That judge's first version was also broken: it marked every answer correct, mean
 
 ## What I got wrong
 
-Early in the project, hybrid keyword+semantic search was tested at two weightings (α=0.5, α=0.7) and reported as **not** beating pure semantic search, a reasonable conclusion from the data available at the time. A full sweep across eight values later found a real peak at α=0.8, beating semantic-only by 3.3 points. The original two points happened to sit on the rising part of a curve, short of its actual peak.
+Early in the project, hybrid keyword+semantic search was tested at two weightings (α=0.5, α=0.7) and reported as **not** beating pure semantic search, a reasonable conclusion from the data available at the time. A full sweep across eight values later found what looked like a real peak at α=0.8, beating semantic-only by 3.3 points, and I reported that as a corrected, confirmed finding.
 
-I'm leaving the wrong conclusion in the full writeup rather than quietly correcting it. The correction is itself evidence the methodology can catch its own mistakes when pushed further, which is the whole point of building an evaluation harness in the first place.
+It wasn't. Running McNemar's exact test on that exact comparison, prompted by a separate re-verification pass that also caught the sample-size issue below, returned p=1.0: the entire "peak" is one question out of thirty. I had replaced one unearned conclusion (hybrid doesn't help) with another (hybrid is confirmed better) without ever actually testing whether either one was statistically real. The honest version is neither: the data so far cannot distinguish hybrid search from pure semantic search at any weighting tested.
+
+A second mistake surfaced in the same pass, this time in the README rather than the analysis: after expanding the eval set from 30 to 36 questions, the strategy table kept reporting the original fixed-line baseline's 75.00% score from the old 30-question set, next to newer strategies scored on 36. Re-running the baseline on the current set gave 93.33%, higher than the "improved" chunking strategy it was supposed to be worse than. Testing that comparison also came back not significant (p=1.0): a full third of the project's headline comparisons turned out to be single-question noise rather than confirmed effects.
+
+I'm leaving both mistakes here rather than quietly fixing the numbers, for the same reason as always: the corrections are the actual evidence that the methodology works, catching its own errors when someone (in this case, an outside reviewer) pushes on it hard enough. The real lesson isn't "hybrid doesn't help" or "chunking doesn't matter." It's that 36 questions is not enough to responsibly claim any of these comparisons are settled, and every accuracy table in this project should be read with that in mind until the eval set grows.
 
 ## How correct is "correct"?
 
@@ -69,7 +75,8 @@ python check_answer_quality.py   # three-judge end-to-end answer grading
 
 ## Known limitations
 
-- 36 questions is still a modest sample; strategy differences are directional, not statistically airtight
+- **None of the three tested comparisons reach statistical significance at n=36.** Chunking strategy: p=1.0. Hybrid weighting: p=1.0. Query decomposition: p=0.25, the closest but still short of 0.05. A larger, properly powered eval set (80-100+ questions, per a standard rule of thumb for detecting effects of this size) is the single highest-priority next step for this project, above any new feature.
+- Every reported accuracy number assumes the model needs retrieved context to answer correctly. That assumption has not been tested: `psf/requests` is very likely present in the training data of the model used for generation, so an unknown fraction of correct answers may reflect memorized knowledge rather than successful retrieval. A closed-book control (no context, and a wrong-context control) is needed before any accuracy number here should be read as evidence the retrieval layer is doing the work it's credited with.
 - Abstention detection uses keyword matching, untested against a larger or adversarial question set
 - Function-level retrieval precision is unmeasured: scoring checks file-level presence only
 - All findings are specific to this one 20-file corpus and may not generalize to a codebase with a different size/structure profile
