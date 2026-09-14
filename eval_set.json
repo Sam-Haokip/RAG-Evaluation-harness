@@ -1,0 +1,255 @@
+[
+  {
+    "id": "q1",
+    "type": "factual",
+    "question": "What does the raise_for_status method do when a request returns a 404 status code?",
+    "answer": "It raises an HTTPError exception with a message like '404 Client Error: {reason} for url: {url}', since 404 falls in the 400-499 range treated as a client error.",
+    "source": "models.py, Response.raise_for_status"
+  },
+  {
+    "id": "q2",
+    "type": "factual",
+    "question": "What does the path_url method do?",
+    "answer": "It splits the full URL into parts, extracts just the path and query string (ignoring the domain), and joins them into a single string, defaulting to '/' if there's no path.",
+    "source": "models.py, RequestEncodingMixin.path_url"
+  },
+  {
+    "id": "q3",
+    "type": "multi_hop",
+    "question": "How does Session.send() delegate the actual network request, and why is it structured this way?",
+    "answer": "Session.send() first calls get_adapter() to determine which adapter object should handle the request, then hands the request off to that adapter's own send() method (defined in adapters.py), which performs the actual network transmission and returns a Response object back to Session.send(). This separates high-level request orchestration (cookies, redirects, hooks) from low-level network mechanics, making the adapter swappable and independently testable.",
+    "source": "sessions.py (Session.send) -> adapters.py (HTTPAdapter.send)"
+  },
+  {
+    "id": "q4",
+    "type": "unanswerable",
+    "question": "What does the Session.retry_with_backoff() method do?",
+    "answer": "This method does not exist anywhere in the requests codebase. A correct response should explicitly state that no such method is present, rather than inventing a plausible-sounding description.",
+    "source": "N/A - deliberately absent from corpus"
+  },
+    {
+    "id": "q5",
+    "type": "factual",
+    "question": "What does the RequestsCookieJar class do?",
+    "answer": "It's a custom cookie storage class that makes cookies behave like a dictionary (accessible by name) while remaining compatible with Python's standard http.cookiejar, so requests can manage cookies in a more convenient way than the standard library alone.",
+    "source": "cookies.py, RequestsCookieJar"
+  },
+  {
+    "id": "q6",
+    "type": "factual",
+    "question": "What exception does requests raise when a request times out?",
+    "answer": "It raises a Timeout exception (or one of its subclasses, ConnectTimeout or ReadTimeout), defined in exceptions.py, which inherits from RequestException.",
+    "source": "exceptions.py, Timeout"
+  },
+  {
+    "id": "q7",
+    "type": "factual",
+    "question": "What is the base exception class that all requests-specific errors inherit from?",
+    "answer": "RequestException is the base class for all of requests' custom exceptions (like ConnectionError, Timeout, HTTPError), so code can catch RequestException to handle any requests-related failure generically.",
+    "source": "exceptions.py, RequestException"
+  },
+  {
+    "id": "q8",
+    "type": "factual",
+    "question": "What does the CaseInsensitiveDict class do, and why does requests use it?",
+    "answer": "It's a dictionary-like structure where keys are treated as case-insensitive (so 'Content-Type' and 'content-type' are treated as the same key). requests uses it for storing HTTP headers, since header names are case-insensitive per the HTTP spec.",
+    "source": "structures.py, CaseInsensitiveDict"
+  },
+  {
+    "id": "q9",
+    "type": "factual",
+    "question": "What does the codes object in status_codes.py provide?",
+    "answer": "It provides human-readable names for HTTP status codes (e.g., codes.ok for 200, codes.not_found for 404), so developers can write more readable code instead of using raw numbers.",
+    "source": "status_codes.py, codes"
+  },
+  {
+    "id": "q10",
+    "type": "multi_hop",
+    "question": "How does an HTTPError raised by raise_for_status() relate to the RequestException hierarchy?",
+    "answer": "HTTPError is defined in exceptions.py and inherits from RequestException, meaning it's a specific type of request-related error. When Response.raise_for_status() (in models.py) detects a 4xx or 5xx status code, it raises this specific exception type, which callers can catch either specifically (HTTPError) or generically (RequestException).",
+    "source": "models.py (Response.raise_for_status) -> exceptions.py (HTTPError, RequestException)"
+  },
+  {
+    "id": "q11",
+    "type": "multi_hop",
+    "question": "How do cookies set in a response get stored back into a Session for future requests?",
+    "answer": "When Session.send() receives a response, it calls extract_cookies_to_jar() (from cookies.py) to pull cookies out of the raw response and store them in the Session's own cookie jar (self.cookies), so subsequent requests made with that same Session will automatically include those cookies.",
+    "source": "sessions.py (Session.send) -> cookies.py (extract_cookies_to_jar)"
+  },
+  {
+    "id": "q12",
+    "type": "unanswerable",
+    "question": "How does requests handle automatic retry with exponential backoff by default?",
+    "answer": "The requests library itself does not implement automatic retry with exponential backoff by default. This kind of retry logic is typically configured separately via urllib3's Retry class attached to a custom HTTPAdapter, not something built into requests' default behavior.",
+    "source": "N/A - not implemented by default in this corpus"
+  },
+  {
+    "id": "q13",
+    "type": "unanswerable",
+    "question": "What does the Response.stream_json() method do?",
+    "answer": "This method does not exist in the requests library. A correct response should state that no such method is present in the codebase, rather than describing invented streaming-JSON behavior.",
+    "source": "N/A - deliberately absent from corpus"
+  },
+  {
+    "id": "q14",
+    "type": "factual",
+    "question": "What does the utils.py function default_headers() return?",
+    "answer": "It returns a CaseInsensitiveDict containing the default headers requests attaches to every request, such as a default User-Agent string identifying the requests library and version.",
+    "source": "utils.py, default_headers"
+  },
+  {
+  "id": "q15",
+  "type": "factual",
+  "question": "What does the HTTPAdapter class do in adapters.py?",
+  "answer": "HTTPAdapter is the default transport adapter used by Session objects. It manages the actual sending of requests over HTTP/HTTPS using urllib3 under the hood, including connection pooling, retries, and SSL verification.",
+  "source": "adapters.py, HTTPAdapter"
+},
+{
+  "id": "q16",
+  "type": "factual",
+  "question": "What does the send() method on HTTPAdapter do?",
+  "answer": "It takes a PreparedRequest, sends it over the network using a urllib3 connection pool, handles low-level details like timeouts and SSL verification, and builds a Response object from the raw HTTP reply before returning it.",
+  "source": "adapters.py, HTTPAdapter.send"
+},
+{
+  "id": "q17",
+  "type": "factual",
+  "question": "What does the dispatch_hook function in hooks.py do?",
+  "answer": "It runs any user-registered hook functions for a given event (like 'response'), passing the relevant object (e.g., a Response) through each hook function in order, allowing users to customize or inspect behavior at specific points in the request lifecycle.",
+  "source": "hooks.py, dispatch_hook"
+},
+{
+  "id": "q18",
+  "type": "factual",
+  "question": "What hook events does requests support by default?",
+  "answer": "requests defines a default set of hook events in hooks.py, primarily the 'response' event, which fires after a response is received, letting users run custom code (like logging or modifying the response) at that point.",
+  "source": "hooks.py, HOOKS"
+},
+{
+  "id": "q19",
+  "type": "factual",
+  "question": "What does the compat.py module handle?",
+  "answer": "It handles compatibility differences, providing consistent imports and aliases (like for JSON handling or string/bytes types) so the rest of the requests codebase can be written without worrying about small differences between environments or Python versions.",
+  "source": "compat.py"
+},
+{
+  "id": "q20",
+  "type": "factual",
+  "question": "What does the to_key_val_list function in _internal_utils.py (or utils.py) do?",
+  "answer": "It converts different possible input formats (like a dictionary or a list of tuples) into a consistent list of key-value tuple pairs, so functions that build query strings or form data can handle multiple input styles uniformly.",
+  "source": "utils.py, to_key_val_list"
+},
+{
+  "id": "q21",
+  "type": "factual",
+  "question": "What does the __version__.py file contain?",
+  "answer": "It defines version metadata for the requests package, including the current version number, author, and license information as string constants that other parts of the library (like the default User-Agent) can reference.",
+  "source": "__version__.py"
+},
+{
+  "id": "q22",
+  "type": "factual",
+  "question": "What does the api.py module provide?",
+  "answer": "It provides the top-level convenience functions users typically call directly, like requests.get(), requests.post(), requests.put(), etc., each of which internally creates a temporary Session and calls its request() method.",
+  "source": "api.py"
+},
+{
+  "id": "q23",
+  "type": "multi_hop",
+  "question": "When you call requests.get(url), what sequence of calls happens under the hood?",
+  "answer": "requests.get() (in api.py) calls the module-level request() function, which creates a temporary Session (from sessions.py), calls its .request() method to build a PreparedRequest, then calls Session.send(), which delegates to an HTTPAdapter's send() method (in adapters.py) to actually transmit the request and return a Response.",
+  "source": "api.py -> sessions.py (Session.request, Session.send) -> adapters.py (HTTPAdapter.send)"
+},
+{
+  "id": "q24",
+  "type": "multi_hop",
+  "question": "How does a hook registered by a user actually get called during a request?",
+  "answer": "When a PreparedRequest is built, its hooks are attached (from sessions.py or the Request object). After the adapter sends the request and a Response comes back, Session.send() calls dispatch_hook() (from hooks.py), which loops through and calls each registered hook function for that event, passing the response through.",
+  "source": "sessions.py (Session.send) -> hooks.py (dispatch_hook)"
+},
+{
+  "id": "q25",
+  "type": "multi_hop",
+  "question": "How does requests determine what User-Agent string to send by default?",
+  "answer": "default_headers() (in utils.py) calls default_user_agent(), which builds a string using the version number defined in __version__.py, combining them into something like 'python-requests/2.x.x'. This becomes part of the default headers attached to every Session.",
+  "source": "utils.py (default_headers, default_user_agent) -> __version__.py"
+},
+{
+  "id": "q26",
+  "type": "unanswerable",
+  "question": "How does requests handle WebSocket connections?",
+  "answer": "requests does not support WebSocket connections at all - it's built specifically for standard HTTP request/response communication, not persistent bidirectional protocols like WebSockets.",
+  "source": "N/A - not supported by this library"
+},
+{
+  "id": "q27",
+  "type": "unanswerable",
+  "question": "What does the Session.cache_responses() method do?",
+  "answer": "This method does not exist in the requests library. requests has no built-in response caching mechanism by default; a correct answer should state this method isn't present rather than describing invented caching behavior.",
+  "source": "N/A - deliberately absent from corpus"
+},
+{
+  "id": "q28",
+  "type": "unanswerable",
+  "question": "How does requests handle GraphQL query batching?",
+  "answer": "requests has no concept of GraphQL at all - it's a general-purpose HTTP client with no special handling for any particular API paradigm like GraphQL, REST, or gRPC beyond raw HTTP requests.",
+  "source": "N/A - not applicable to this corpus"
+},
+{
+  "id": "q29",
+  "type": "factual",
+  "question": "What is the purpose of the certs.py module?",
+  "answer": "It provides a way to locate the default certificate bundle (used for verifying SSL/TLS certificates during HTTPS requests), typically by relying on the certifi package.",
+  "source": "certs.py"
+},
+{
+  "id": "q30",
+  "type": "factual",
+  "question": "What does the packages.py module do?",
+  "answer": "It's a small compatibility shim that re-exports certain vendored or bundled dependencies (like urllib3 and chardet/charset_normalizer) under consistent import paths, so the rest of the codebase doesn't need to worry about exactly how they're packaged.",
+  "source": "packages.py"
+},
+{
+  "id": "q31",
+  "type": "factual",
+  "question": "In requests.auth.HTTPDigestAuth, why is per-request state (last_nonce, nonce_count, chal, pos, num_401_calls) stored in _thread_local instead of as plain instance attributes?",
+  "answer": "threading.local() gives each thread its own private namespace for _thread_local, so per-request state never gets shared or overwritten across threads even though every thread is calling methods on the same HTTPDigestAuth instance. Plain instance attributes would break this: two threads reusing the same auth object concurrently would read and write the same last_nonce/nonce_count/chal directly on self, so one thread's in-flight digest calculation could be corrupted by another thread's request mid-flight. Rather than setting this state up front in __init__, init_per_thread_state() runs at the top of every __call__ and uses if not hasattr(self._thread_local, 'init') to initialize defaults lazily on first use per thread, so each new thread gets a clean slate without the object needing to know in advance which threads will ever call it.",
+  "source": "auth.py, HTTPDigestAuth.init_per_thread_state"
+},
+{
+  "id": "q32",
+  "type": "factual",
+  "question": "In HTTPDigestAuth.build_digest_header, how does the method decide which hash algorithm to use, and how is that algorithm applied to construct the final digest response?",
+  "answer": "The algorithm comes from the server's challenge, not a fixed default: it reads self._thread_local.chal.get('algorithm'), defaults to MD5 if the server didn't specify one, and uses the uppercased value to pick one of four hash functions (MD5/MD5-SESS use hashlib.md5, SHA uses hashlib.sha1, SHA-256 uses hashlib.sha256, SHA-512 uses hashlib.sha512), each wrapped to UTF-8-encode its input first. It builds the raw strings A1 as 'username:realm:password' and A2 as 'method:path', hashes them into HA1 and HA2 with the chosen function (for MD5-SESS, HA1 is then re-hashed as 'HA1:nonce:cnonce'), and combines them with the nonce - and, if the challenge specified a qop, with the nonce count and cnonce as well - into the response digest, which gets assembled into the final 'Digest ...' Authorization header string.",
+  "source": "auth.py, HTTPDigestAuth.build_digest_header"
+},
+{
+  "id": "q33",
+  "type": "factual",
+  "question": "What has to be true of a response for HTTPDigestAuth.handle_401 to actually retry with a digest header, versus just passing the response through?",
+  "answer": "The status code must fall in the 4xx range (anything outside 400-499 is passed through untouched with num_401_calls reset to 1), the WWW-Authenticate header must contain 'digest' (checked case-insensitively), and num_401_calls must still be less than 2. If all three hold, it increments num_401_calls, parses the challenge into chal, rebuilds the Authorization header via build_digest_header, and resends the request on the same connection via r.connection.send(), carrying over cookies extracted from the original response. Separately, if the request body has a saved read position, the body is rewound before this check runs regardless of whether the retry actually proceeds. If the digest/retry-count condition fails, num_401_calls resets to 1 and the original response is returned as-is, which is what stops a second failed attempt from retrying indefinitely.",
+  "source": "auth.py, HTTPDigestAuth.handle_401"
+},
+{
+  "id": "q34",
+  "type": "factual",
+  "question": "When you iterate over a CaseInsensitiveDict, do you get back the lowercased keys used for lookup, or the original casing?",
+  "answer": "The original casing. CaseInsensitiveDict stores each entry in self._store keyed by the lowercased version of the key, but the stored value is an (original_key, value) pair, not just value. __iter__ walks self._store.values() and yields only the original_key half of each pair, so lowercasing only affects how keys are matched for lookup or assignment - whatever case a caller originally used when the key was set is what comes back on iteration or in .items().",
+  "source": "structures.py, CaseInsensitiveDict.__iter__"
+},
+{
+  "id": "q35",
+  "type": "factual",
+  "question": "What does LookupDict do differently from CaseInsensitiveDict, and what is it used for?",
+  "answer": "LookupDict has no case-folding logic at all - its distinguishing behavior is that __getitem__ returns None for a missing key instead of raising KeyError, by looking the key up in self.__dict__ rather than normal dict storage. It's used in status_codes.py to build the codes object, where each status name is set as a plain attribute (codes.ok), so codes['not_a_real_name'] returns None instead of raising. CaseInsensitiveDict exists for a different problem entirely: HTTP headers, where case must be ignored on lookup but preserved on display.",
+  "source": "structures.py, LookupDict.__getitem__"
+},
+{
+  "id": "q36",
+  "type": "factual",
+  "question": "How can multiple names, like 'ok' and 'okay', both resolve to status code 200 in requests.codes?",
+  "answer": "status_codes.py maps each numeric code to a tuple of all its accepted names (200's tuple includes both 'ok' and 'okay' among others) and loops over that mapping calling setattr(codes, title, code) for every name in the tuple, plus an uppercase variant of each name (unless the name starts with a backslash or slash). There's no special aliasing lookup - the same integer just gets assigned to several different attribute names on the same LookupDict instance during setup, so codes.ok and codes.okay are two separate attributes that happen to hold the same value.",
+  "source": "status_codes.py, _init"
+}
+
+]

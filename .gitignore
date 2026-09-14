@@ -1,0 +1,6 @@
+.env
+__pycache__/
+*.pyc
+scratch/
+chunks_with_embeddings.json
+chunks_function_aware.json
