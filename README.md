@@ -82,6 +82,8 @@ Retrieval accuracy only measures whether the right file was found, not whether t
 
 ## Running it
 
+**Requires Python 3.13.** Tested and verified against Python 3.13.9 specifically. Running under a different version, particularly 3.12, produces a different chunk count from `build_index.py`'s AST-based chunker (339 chunks under 3.12 vs. 320 under 3.13, most likely from a difference in how Python's `ast` module parses `@overload`-decorated stubs or `X | Y` union type syntax). This was caught by a fresh-clone reproducibility test and confirmed **not** to change end-to-end retrieval accuracy on the current eval set (90.00% on both versions), but the chunk-level divergence itself is real and unresolved. If you're on a different Python version, run `build_index.py` and confirm your own accuracy numbers before trusting the ones in this document.
+
 ```bash
 pip install -r requirements.txt
 # add your API key to .env (see .env.example)
@@ -94,6 +96,7 @@ python check_answer_quality.py   # three-judge end-to-end answer grading
 
 ## Known limitations
 
+- **Chunking is not fully reproducible across Python versions.** Python 3.12 and 3.13 produce different chunk counts from the identical corpus and identical code, traced to `ast` module parsing differences on `@overload` and union-type syntax. Confirmed via a fresh-clone test not to change retrieval accuracy on the current eval set, but this was found by accident during a reproducibility check, not by design, and has not been tested on any other Python version.
 - **None of the three tested comparisons reach statistical significance at n=36.** Chunking strategy: p=1.0. Hybrid weighting: p=1.0. Query decomposition: p=0.25, the closest but still short of 0.05. A larger, properly powered eval set (80-100+ questions, per a standard rule of thumb for detecting effects of this size) is the single highest-priority next step for this project, above any new feature.
 - **Resolved:** whether the system depends on real retrieval or is coasting on the generation model's training knowledge of `psf/requests` was an open question, addressed with a matched-prompt closed-book control (see [Does retrieval even matter here?](#does-retrieval-even-matter-here)). The system does depend on retrieval (p < 0.0001). The benchmark itself is not contamination-proof: a no-context model given permission to guess freely scores roughly 77-80% on these questions from training familiarity alone, and that floor should be kept in mind when reading any accuracy number in this document.
 - Abstention detection uses keyword matching, untested against a larger or adversarial question set
