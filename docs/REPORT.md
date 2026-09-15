@@ -155,6 +155,15 @@ A full sweep across eight alpha values later appeared to correct this. Accuracy 
 
 **This means the project made the same mistake twice, in opposite directions, on the same underlying question. The original two-point conclusion (hybrid doesn't help) was reported without enough data to support it. The revised eight-point conclusion (hybrid does help, confirmed) was also reported without the one test that would have actually supported it. The honest version, arrived at only after a third pass, is that pure semantic search and hybrid search at any tested weighting are not distinguishable with the data collected so far.**
 
+A separate methodological gap sat underneath the first two: alpha=0.8 was selected by sweeping all eight values against the same 30 questions used to report its accuracy, tuning and evaluating on identical data. This was addressed with a stratified 15/15 tuning and holdout split, selecting alpha on the tuning half only and testing it on the untouched holdout half.
+
+| **Configuration**                  | **Tuning set (n=15)** | **Holdout set (n=15)** |
+|------------------------------------|-----------------------|------------------------|
+| Hybrid, α=0.8 (selected on tuning) | **93.33%**            | **93.33%**             |
+| Pure semantic, α=1.0 (never tuned) | 86.67%                | 93.33%                 |
+
+**This result is genuinely mixed and both halves matter. The alpha-selection process itself is validated: 0.8's accuracy held exactly between tuning and holdout, a zero-point gap, meaning the earlier alpha sweep was not simply overfitting to the 30 questions it was evaluated on. But pure semantic search, never tuned at all, scored identically to the selected hybrid weighting on the holdout set. At 15 questions per half, this split cannot distinguish a real hybrid advantage from no advantage at all, which is consistent with, not contradictory to, the McNemar result above. The holdout split validates the methodology used to pick alpha. It does not validate the claim that hybrid search outperforms pure semantic search.**
+
 ### 5. Evaluation methodology moved the headline number by 37 points
 
 
